@@ -10,7 +10,7 @@ def server_restart_2(conn):
         admin_check(None, 'restart')
 
         print('----')
-        print('재시동합니다...')
+        print('Restart')
 
         os.execl(sys.executable, sys.executable, *sys.argv)
     else:

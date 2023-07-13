@@ -1,8 +1,15 @@
 from .tool.func import *
 
-def topic_tool_2(conn, name, sub):
+def topic_tool_2(conn, tnum):
     curs = conn.cursor()
-    
+    curs.execute("select title, sub from topic where tnum = ?", [tnum])
+    fet = curs.fetchall()
+    if fet:
+        name = fet[0][0]
+        sub = fet[0][1]
+    else:
+        return re_error('/error/7000')
+
     curs.execute("select id from topic where title = ? and sub = ? limit 1", [name, sub])
     topic_exist = curs.fetchall()
     if not topic_exist:
@@ -18,7 +25,7 @@ def topic_tool_2(conn, name, sub):
             all_data += load_lang('topic_open')
         else:
             all_data += load_lang('topic_close')
-        
+
         all_data += '</a></li><li><a href="/topic/' + url_pas(name) + '/sub/' + url_pas(sub) + '/tool/stop">'
 
         curs.execute("select title from rd where title = ? and sub = ? and stop = 'S'", [name, sub])
@@ -26,20 +33,20 @@ def topic_tool_2(conn, name, sub):
             all_data += load_lang('topic_restart')
         else:
             all_data += load_lang('topic_stop')
-            
+
         all_data += '</a></li><li><a href="/topic/' + url_pas(name) + '/sub/' + url_pas(sub) + '/tool/agree">'
-        
+
         curs.execute("select title from rd where title = ? and sub = ? and agree = 'O'", [name, sub])
         if curs.fetchall():
             all_data += load_lang('topic_destruction')
         else:
             all_data += load_lang('topic_agreement')
-        
+
         all_data += '</a></li></ul>'
 
     all_data += '<h2>' + load_lang('tool') + '</h2><ul><li><a id="reload" href="javascript:void(0);" onclick="req_alarm();">' + load_lang('use_push_alarm') + '</a></li></ul>'
 
-    return easy_minify(flask.render_template(skin_check(), 
+    return easy_minify(flask.render_template(skin_check(),
         imp = [name, wiki_set(), custom(), other2([' (' + load_lang('topic_tool') + ')', 0])],
         data = all_data,
         menu = [['topic/' + url_pas(name) + '/sub/' + url_pas(sub), load_lang('return')]]

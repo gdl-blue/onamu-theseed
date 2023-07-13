@@ -2,66 +2,78 @@ from .tool.func import *
 
 def main_manager_2(conn, num, r_ver):
     curs = conn.cursor()
-    
+
     title_list = {
-        0 : [load_lang('document_name'), 'acl'], 
-        1 : [0, 'check'], 
-        2 : [load_lang('file_name'), 'plus_file_filter'],
-        3 : [0, 'admin'], 
-        4 : [0, 'record'], 
-        5 : [0, 'topic_record'], 
-        6 : [load_lang('name'), 'admin_plus'], 
-        7 : [load_lang('name'), 'plus_edit_filter'], 
-        8 : [load_lang('document_name'), 'search'], 
-        9 : [0, 'block_user'], 
-        10 : [0, 'block_admin'], 
-        11 : [load_lang('document_name'), 'watch_list'], 
-        12 : [load_lang('compare_target'), 'check'], 
-        13 : [load_lang('document_name'), 'edit']
+        0 : [load_lang('document_name'), 'acl', '문서 ACL 변경'],
+        1 : [0, 'check', ''],
+        2 : [load_lang('file_name'), 'plus_file_filter', '파일명 필터 추가'],
+        3 : [0, 'admin', ''],
+        4 : [0, 'record', ''],
+        5 : [0, 'topic_record', ''],
+        6 : [load_lang('name'), 'admin_plus', '관리자 그룹 추가'],
+        7 : [load_lang('name'), 'plus_edit_filter', ''],
+        8 : [load_lang('document_name'), 'search', '검색'],
+        9 : [0, 'block_user', ''],
+        10 : [0, 'block_admin', ''],
+        11 : [load_lang('document_name'), 'watch_list', ''],
+        12 : [load_lang('compare_target'), 'check', ''],
+        13 : [load_lang('document_name'), 'edit', '문서 편집']
     }
-    
+    a=''
+    b=''
+    c=''
+    d=''
+    e=''
+    f=''
+    g=''
+
+    unav = ' (사용불가능)'
+    if getperm('admin')==0:
+        a=unav
+    if getperm('login_history')==0:
+        b=unav
+    if getperm('ipacl')==0:
+        c=unav
+    if getperm('suspend_account')==0:
+        d=unav
+    if getperm('grant')==0:
+        e=unav
+    if getperm('developer')==0:
+        g=unav
+
     if num == 1:
-        return easy_minify(flask.render_template(skin_check(), 
+        return easy_minify(flask.render_template(skin_check(),
             imp = [load_lang('admin_tool'), wiki_set(), custom(), other2([0, 0])],
             data =  '''
-                    <h2>''' + load_lang('admin') + '''</h2>
-                    <ul>
-                        <li><a href="/manager/2">''' + load_lang('acl_change') + '''</a></li>
-                        <li><a href="/login_history">''' + load_lang('check_user') + '''</a></li>
-                        <li><a href="/ban">''' + load_lang('ban') + '''</a></li>
-                        <li><a href="/grant">''' + load_lang('authorize') + '''</a></li>
-                        <li><a href="/edit_filter">''' + load_lang('edit_filter_list') + '''</a></li>
-                        <li><a href="/give_log">''' + load_lang('admin_group_list') + '''</a></li>
+                    <h2>관리 기능</h2>
+                    <ul class=wiki-list>
+                        <li><a href="/manager/2">''' + load_lang('acl_change') + '''</a>''' + a + '''</li>
+                        <li><a href="/admin/login_history">''' + load_lang('check_user') + '''</a>''' + b + '''</li>
+                        <li><a href="/admin/ipacl">IPACL</a>''' + c + '''</li>
+                        <li><a href="/admin/suspend_account">사용자 ''' + load_lang('ban') + '''</a>''' + d + '''</li>
+                        <li><a href="/admin/grant">''' + load_lang('authorize') + '''</a>''' + e + '''</li>
+                        <li><a href="/give_log">''' + load_lang('admin_group_list') + '''</a>''' + f + '''</li>
                     </ul>
                     <br>
-                    <h2>''' + load_lang('owner') + '''</h2>
-                    <ul>
-                        <li><a href="/manager/8">''' + load_lang('admin_group_add') + '''</a></li>
-                        <li><a href="/setting">''' + load_lang('setting') + '''</a></li>
+                    <h2>위키 구성</h2>
+                    <ul class=wiki-list>
+                        <li><a href="/manager/8">''' + load_lang('admin_group_add') + '''</a>''' + g + '''</li>
+                        <li><a href="/admin/config">위키 ''' + load_lang('setting') + '''</a>''' + g + '''</li>
                     </ul>
-                    <h3>''' + load_lang('filter') + '''</h3>
-                    <ul>
-                        <li><a href="/inter_wiki">''' + load_lang('interwiki_list') + '''</a></li>
-                        <li><a href="/email_filter">''' + load_lang('email_filter_list') + '''</a></li>
-                        <li><a href="/name_filter">''' + load_lang('id_filter_list') + '''</a></li>
-                        <li><a href="/file_filter">''' + load_lang('file_filter_list') + '''</a></li>
+                    <h2>''' + load_lang('filter') + '''</h2>
+                    <ul class=wiki-list>
+                        <li><a href="/admin/inter_wiki">''' + load_lang('interwiki_list') + '''</a></li>
+                        <li><a href="/admin/email_filter">''' + load_lang('email_filter_list') + '''</a></li>
+                        <li><a href="/admin/username_filters">''' + load_lang('id_filter_list') + '''</a>''' + g + '''</li>
+                        <li><a href="/admin/file_filter">''' + load_lang('file_filter_list') + '''</a></li>
+                        <li><a href="/admin/edit_filters">''' + load_lang('edit_filter_list') + '''</a></li>
                     </ul>
                     <br>
                     <h2>''' + load_lang('server') + '''</h2>
-                    <ul>
-                        <li><a href="/indexing">''' + load_lang('indexing') + '''</a></li>
-                        <li><a href="/restart">''' + load_lang('wiki_restart') + '''</a></li>
-                        <li><a href="/update">''' + load_lang('update') + '''</a></li>
-                        <li><a href="/oauth_setting">''' + load_lang('oauth_setting') + '''</a></li>
-                        <li><a href="/adsense_setting">''' + load_lang('adsense_setting') + '''</a></li>
+                    <ul class=wiki-list>
+                        <li><a href="/admin/db_indexing">''' + load_lang('indexing') + '''</a>''' + g + '''</li>
+                        <li><a href="/admin/engine_restart">''' + load_lang('wiki_restart') + '''</a>''' + g + '''</li>
                     </ul>
-                    <br>
-                    <h2>''' + load_lang('version') + '''</h2>
-                    <ul>
-                        <li>''' + load_lang('version') + ' : ' + r_ver + ''' (수정됨)</li>
-                        <li id="ver_send" style="display: none;">''' + load_lang('lastest') + ''' : </li>
-                    </ul>
-                    <script>load_ver();</script>
                     ''',
             menu = [['other', load_lang('return')]]
         ))
@@ -77,16 +89,43 @@ def main_manager_2(conn, num, r_ver):
             else:
                 placeholder = title_list[(num - 2)][0]
 
-            return easy_minify(flask.render_template(skin_check(), 
-                imp = ['정보 입력', wiki_set(), custom(), other2([0, 0])],
+            return easy_minify(flask.render_template(skin_check(),
+                imp = [title_list[(num - 2)][2], wiki_set(), custom(), other2([0, 0])],
                 data =  '''
                         <form method="post">
-                            ''' + placeholder + ''' : <br>
-                            <input name="name" type="text" style="width: 250px;"><br>
-                            <button type="submit" style="color:#fff; width:120px; background-color: #5bc0de; border-color: #5bc0de;display: inline-block;font-weight: 400; line-height: 1.25;text-align: center; white-space: nowrap;vertical-align: middle;user-select: none; border: 1px solid transparent; padding: .5rem 1rem; font-size: 1rem; border-radius: .25rem; transition: all .2s ease-in-out;">확인</button>
+                            <div><label>''' + placeholder + ''' : </label><br>
+                            <input name="name" type="text" style="width: 250px;" class=form-control></div><div class=btns>
+                            <button type="submit" class="btn btn-info pull-right" id="moveBtn" style="width:100px;">확인</button></div>
                         </form>
                         ''',
                 menu = [['manager', load_lang('return')]]
             ))
     else:
         return redirect()
+
+def contribution(typ):
+    if flask.request.method == 'POST':
+        return redirect('/contribution/' + getForm('usertype') + '/' + getForm('username') + '/' + typ)
+
+    if typ == 'document':
+        title = '문서'
+    else:
+        title = '토론'
+
+    return easy_minify(flask.render_template(skin_check(),
+        imp = [title + ' 기여 목록 조회', wiki_set(), custom(), other2([0, 0])],
+        data =  '''
+                <form method="post">
+                    <div><label>사용자 이름 : </label><br>
+                    <input name=username id=usernameInput type="text" style="width: 250px;" class=form-control></div>
+                    <div>
+                    <label style="display: inline-block;"><input type=radio name=usertype value=ip> 아이피</label>
+                    <label style="display: inline-block;"><input type=radio name=usertype value=author checked selected> 사용자</label>
+                    </div>
+
+                    <div class=btns>
+                    <button type="submit" class="btn btn-info pull-right" id="moveBtn" style="width: 100px;">확인</button></div>
+                </form>
+                ''',
+        menu = [['manager', load_lang('return')]]
+    ))

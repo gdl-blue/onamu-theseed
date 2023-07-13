@@ -3,6 +3,8 @@ from . import tool
 import datetime
 import html
 import re
+import random
+import os
 
 def table_parser(data, cel_data, start_data, num = 0):
     table_class = 'class="'
@@ -18,21 +20,23 @@ def table_parser(data, cel_data, start_data, num = 0):
             all_table += 'width: ' + table_width.groups()[0] + 'px;'
         else:
             all_table += 'width: ' + table_width.groups()[0] + ';'
-    
+
     table_height = re.search("&lt;table ?height=((?:(?!&gt;).)*)&gt;", data)
     if table_height:
         if re.search('^[0-9]+$', table_height.groups()[0]):
             all_table += 'height: ' + table_height.groups()[0] + 'px;'
         else:
             all_table += 'height: ' + table_height.groups()[0] + ';'
-    
+
     table_align = re.search("&lt;table ?align=((?:(?!&gt;).)*)&gt;", data)
     if table_align:
         if table_align.groups()[0] == 'right':
-            all_table += 'float: right;'
+            all_table += 'margin: auto; float: right;'
         elif table_align.groups()[0] == 'center':
-            all_table += 'margin: auto;'
-            
+            all_table += 'margin: auto; float:center;'
+        elif table_align.groups()[0] == 'left':
+            all_table += 'margin: auto; float: left'
+
     table_text_align = re.search("&lt;table ?textalign=((?:(?!&gt;).)*)&gt;", data)
     if table_text_align:
         num = 1
@@ -50,12 +54,12 @@ def table_parser(data, cel_data, start_data, num = 0):
             row_style += 'text-align: center;'
         else:
             row_style += 'text-align: left;'
-    
+
     table_cel = re.search("&lt;-((?:(?!&gt;).)*)&gt;", data)
     if table_cel:
         cel = 'colspan="' + table_cel.groups()[0] + '"'
     else:
-        cel = 'colspan="' + str(round(len(start_data) / 2)) + '"'   
+        cel = 'colspan="' + str(round(len(start_data) / 2)) + '"'
 
     table_row = re.search("&lt;\|((?:(?!&gt;).)*)&gt;", data)
     if table_row:
@@ -64,19 +68,19 @@ def table_parser(data, cel_data, start_data, num = 0):
     row_bgcolor = re.search("&lt;rowbgcolor=(#(?:[0-9a-f-A-F]{3}){1,2}|\w+)&gt;", data)
     if row_bgcolor:
         row_style += 'background: ' + row_bgcolor.groups()[0] + ';'
-        
+
     table_border = re.search("&lt;table ?bordercolor=(#(?:[0-9a-f-A-F]{3}){1,2}|\w+)&gt;", data)
     if table_border:
         all_table += 'border: ' + table_border.groups()[0] + ' 2px solid;'
-        
+
     table_bgcolor = re.search("&lt;table ?bgcolor=(#(?:[0-9a-f-A-F]{3}){1,2}|\w+)&gt;", data)
     if table_bgcolor:
         all_table += 'background: ' + table_bgcolor.groups()[0] + ';'
-        
+
     bgcolor = re.search("&lt;(?:bgcolor=)?(#(?:[0-9a-f-A-F]{3}){1,2}|\w+)&gt;", data)
     if bgcolor:
         cel_style += 'background: ' + bgcolor.groups()[0] + ';'
-        
+
     cel_width = re.search("&lt;width=((?:(?!&gt;).)*)&gt;", data)
     if cel_width:
         cel_style += 'width: ' + cel_width.groups()[0] + 'px;'
@@ -84,7 +88,7 @@ def table_parser(data, cel_data, start_data, num = 0):
     cel_height = re.search("&lt;height=((?:(?!&gt;).)*)&gt;", data)
     if cel_height:
         cel_style += 'height: ' + cel_height.groups()[0] + 'px;'
-        
+
     text_right = re.search("&lt;\)&gt;", data)
     text_center = re.search("&lt;:&gt;", data)
     text_left = re.search("&lt;\(&gt;",  data)
@@ -105,14 +109,14 @@ def table_parser(data, cel_data, start_data, num = 0):
     text_class = re.search("&lt;table ?class=((?:(?!&gt;).)+)&gt;", data)
     if text_class:
         table_class += text_class.groups()[0]
-        
+
     all_table += '"'
     cel_style += '"'
     row_style += '"'
     table_class += '"'
 
     return [all_table, row_style, cel_style, row, cel, table_class, num]
-    
+
 def table_start(data):
     while 1:
         table = re.search('\n((?:(?:(?:(?:\|\|)+(?:(?:(?!\|\|).(?:\n)*)*))+)\|\|(?:\n)?)+)', data)
@@ -122,24 +126,24 @@ def table_start(data):
                 all_table = re.search('^((?:\|\|)+)((?:&lt;(?:(?:(?!&gt;).)+)&gt;)*)\n*((?:(?!\|\|).\n*)*)', table)
                 if all_table:
                     all_table = all_table.groups()
-                    
+
                     return_table = table_parser(all_table[1], all_table[2], all_table[0])
-                    
+
                     number = return_table[6]
-                    
-                    table = re.sub('^((?:\|\|)+)((?:&lt;(?:(?:(?!&gt;).)+)&gt;)*)\n*', '\n<table ' + return_table[5] + ' ' + return_table[0] + '><tbody><tr ' + return_table[1] + '><td ' + return_table[2] + ' ' + return_table[3] + ' ' + return_table[4] + '>', table, 1)
+
+                    table = re.sub('^((?:\|\|)+)((?:&lt;(?:(?:(?!&gt;).)+)&gt;)*)\n*', '\n<table class="wiki-table" ' + return_table[5] + ' ' + return_table[0] + '><tbody><tr ' + return_table[1] + '><td ' + return_table[2] + ' ' + return_table[3] + ' ' + return_table[4] + '>', table, 1)
                 else:
                     break
-                    
+
             table = re.sub('\|\|\n?$', '</td></tr></tbody></table>', table)
 
             while 1:
                 row_table = re.search('\|\|\n((?:\|\|)+)((?:&lt;(?:(?:(?!&gt;).)+)&gt;)*)\n*((?:(?!\|\||<\/td>).\n*)*)', table)
                 if row_table:
                     row_table = row_table.groups()
-                    
+
                     return_table = table_parser(row_table[1], row_table[2], row_table[0], number)
-                    
+
                     table = re.sub('\|\|\n((?:\|\|)+)((?:&lt;(?:(?:(?!&gt;).)+)&gt;)*)\n*', '</td></tr><tr ' + return_table[1] + '><td ' + return_table[2] + ' ' + return_table[3] + ' ' + return_table[4] + '>', table, 1)
                 else:
                     break
@@ -148,9 +152,9 @@ def table_start(data):
                 cel_table = re.search('((?:\|\|)+)((?:&lt;(?:(?:(?!&gt;).)+)&gt;)*)\n*((?:(?:(?!\|\||<\/td>).)|\n)*\n*)', table)
                 if cel_table:
                     cel_table = cel_table.groups()
-                    
+
                     return_table = table_parser(cel_table[1], re.sub('\n', ' ', cel_table[2]), cel_table[0], number)
-                    
+
                     table = re.sub('((?:\|\|)+)((?:&lt;(?:(?:(?!&gt;).)+)&gt;)*)\n*', '</td><td ' + return_table[2] + ' ' + return_table[3] + ' ' + return_table[4] + '>', table, 1)
                 else:
                     break
@@ -158,7 +162,7 @@ def table_start(data):
             data = re.sub('\n((?:(?:(?:(?:\|\|)+(?:(?:(?!\|\|).(?:\n)*)*))+)\|\|(?:\n)?)+)', table, data, 1)
         else:
             break
-            
+
     return data
 
 def middle_parser(data, fol_num, syntax_num, folding_num):
@@ -177,102 +181,160 @@ def middle_parser(data, fol_num, syntax_num, folding_num):
             if not middle_data[1]:
                 if middle_stack > 0:
                     middle_stack += 1
-                    
+
                     data = re.sub('(?:{{{((?:(?! |{{{|}}}|&lt;).)*)(?P<in> ?)|(}}}))', '&#123;&#123;&#123;' + middle_data[0] + '\g<in>', data, 1)
                 else:
                     if re.search('^(#|@|\+|\-)', middle_data[0]) and not re.search('^(#|@|\+|\-){2}|(#|@|\+|\-)\\\\', middle_data[0]):
                         middle_search = re.search('^(#(?:[0-9a-f-A-F]{3}){1,2})', middle_data[0])
-                        if middle_search:                            
+                        if middle_search:
                             middle_list += ['span']
-                            
+
                             data = middle_re.sub('<span style="color: ' + middle_search.groups()[0] + ';">', data, 1)
                         else:
-                            middle_search = re.search('^(?:#(\w+))', middle_data[0])
+                            middle_search = re.search('^(?:[$])', middle_data[0])
                             if middle_search:
                                 middle_list += ['span']
-                                
-                                data = middle_re.sub('<span style="color: ' + middle_search.groups()[0] + ';">', data, 1)
+
+                                data = middle_re.sub('<span class=spoiler-text>', data, 1)
                             else:
-                                middle_search = re.search('^(?:@((?:[0-9a-f-A-F]{3}){1,2}))', middle_data[0])
+                                middle_search = re.search('^(?:#(\w+))', middle_data[0])
                                 if middle_search:
                                     middle_list += ['span']
-                                    
-                                    data = middle_re.sub('<span style="background: #' + middle_search.groups()[0] + ';">', data, 1)
+
+                                    data = middle_re.sub('<span style="color: ' + middle_search.groups()[0] + ';">', data, 1)
                                 else:
-                                    middle_search = re.search('^(?:@(\w+))', middle_data[0])
+                                    middle_search = re.search('^(?:@((?:[0-9a-f-A-F]{3}){1,2}))', middle_data[0])
                                     if middle_search:
                                         middle_list += ['span']
-                                        
-                                        data = middle_re.sub('<span style="background: ' + middle_search.groups()[0] + ';">', data, 1)
+
+                                        data = middle_re.sub('<span style="background: #' + middle_search.groups()[0] + ';">', data, 1)
                                     else:
-                                        middle_search = re.search('^(\+|-)([1-5])', middle_data[0])
+                                        middle_search = re.search('^(?:@(\w+))', middle_data[0])
                                         if middle_search:
-                                            middle_search = middle_search.groups()
-                                            if middle_search[0] == '+':
-                                                font_size = str(int(middle_search[1]) * 20 + 100)
-                                            else:
-                                                font_size = str(100 - int(middle_search[1]) * 10)
-
                                             middle_list += ['span']
-                                            
-                                            data = middle_re.sub('<span style="font-size: ' + font_size + '%;">', data, 1)
-                                        else:
-                                            middle_search = re.search('^#!wiki', middle_data[0])
-                                            if middle_search:
-                                                middle_data_2 = re.search('{{{#!wiki(?: style=(?:&quot;|&#x27;)((?:(?!&quot;|&#x27;).)*)(?:&quot;|&#x27;))?\n?', data)
-                                                if middle_data_2:
-                                                    middle_data_2 = middle_data_2.groups()
-                                                else:
-                                                    middle_data_2 = ['']
 
-                                                middle_list += ['div_end']
-                                                
-                                                data = re.sub('{{{#!wiki(?: style=(?:&quot;|&#x27;)((?:(?!&quot;|&#x27;).)*)(?:&quot;|&#x27;))?\n?', '<div id="wiki_div" style="' + str(middle_data_2[0]) + '">', data, 1)
+                                            data = middle_re.sub('<span style="background: ' + middle_search.groups()[0] + ';">', data, 1)
+                                        else:
+                                            middle_search = re.search('^(\+|-)([1-5])', middle_data[0])
+                                            if middle_search:
+                                                middle_search = middle_search.groups()
+                                                if middle_search[0] == '+':
+                                                    font_size = str(int(middle_search[1]) * 20 + 100)
+                                                else:
+                                                    font_size = str(100 - int(middle_search[1]) * 10)
+
+                                                middle_list += ['span']
+
+                                                data = middle_re.sub('<span style="font-size: ' + font_size + '%;">', data, 1)
                                             else:
-                                                middle_search = re.search('^#!syntax', middle_data[0])
-                                                if middle_search:                                                
-                                                    middle_data_2 = re.search('{{{#!syntax ((?:(?!\n).)+)\n?', data)
+                                                middle_search = re.search('^#!wiki', middle_data[0])
+                                                if middle_search:
+                                                    middle_data_2 = re.search('{{{#!wiki(?: style=(?:&quot;|&#x27;)((?:(?!&quot;|&#x27;).)*)(?:&quot;|&#x27;))?\n?', data)
                                                     if middle_data_2:
                                                         middle_data_2 = middle_data_2.groups()
                                                     else:
-                                                        middle_data_2 = ['python']
+                                                        middle_data_2 = ['']
 
-                                                    if syntax_num == 0:
-                                                        plus_data += '<script>hljs.initHighlightingOnLoad();</script>'
+                                                    middle_list += ['div_end']
 
-                                                        syntax_num = 1
-
-                                                    middle_list += ['pre']
-                                                    
-                                                    data = re.sub('{{{#!syntax ?((?:(?!\n).)*)\n?', '<pre id="syntax"><code class="' + middle_data_2[0] + '">', data, 1)
+                                                    data = re.sub('{{{#!wiki(?: style=(?:&quot;|&#x27;)((?:(?!&quot;|&#x27;).)*)(?:&quot;|&#x27;))?\n?', '<div id="wiki_div" style="' + str(middle_data_2[0]) + '">', data, 1)
                                                 else:
-                                                    middle_search = re.search('^#!folding', middle_data[0])
+                                                    middle_search = re.search('^#!syntax', middle_data[0])
                                                     if middle_search:
-                                                        middle_list += ['2div']
-                                                        
-                                                        folding_data = re.search('{{{#!folding ?((?:(?!\n).)*)\n?', data)
-                                                        if folding_data:
-                                                            folding_data = folding_data.groups()
+                                                        middle_data_2 = re.search('{{{#!syntax ((?:(?!\n).)+)\n?', data)
+                                                        if middle_data_2:
+                                                            middle_data_2 = middle_data_2.groups()
                                                         else:
-                                                            folding_data = ['Test']
+                                                            middle_data_2 = ['python']
 
-                                                        if folding_num == 0:
-                                                            folding_num = 1
-                                                        
-                                                        data = re.sub('{{{#!folding ?((?:(?!\n).)*)\n?', '<div><a onclick="var dvs = getElementById(\'folding_' + str(fol_num) + '\');if(dvs.style.display==\'none\')dvs.style.display=\'block\';else dvs.style.display=\'none\';" style="color:#000;display:block">' + str(folding_data[0]) + '</a></div><div id="folding_' + str(fol_num) + '" style="display: none;"><div id="wiki_div" style="">', data, 1)
-                                                        
-                                                        fol_num += 1
+                                                        if syntax_num == 0:
+                                                            plus_data += '<script>hljs.initHighlightingOnLoad();</script>'
+
+                                                            syntax_num = 1
+
+                                                        middle_list += ['pre']
+
+                                                        data = re.sub('{{{#!syntax ?((?:(?!\n).)*)\n?', '<pre id="syntax"><code class="' + middle_data_2[0] + '">', data, 1)
                                                     else:
-                                                        middle_list += ['span']
+                                                        middle_search = re.search('^#!syntax', middle_data[0])
+                                                    if middle_search:
+                                                        middle_data_2 = re.search('{{{#!syntax ((?:(?!\n).)+)\n?', data)
+                                                        if middle_data_2:
+                                                            middle_data_2 = middle_data_2.groups()
+                                                        else:
+                                                            middle_data_2 = ['python']
 
-                                                        data = middle_re.sub('<span>', data, 1)
+                                                        if syntax_num == 0:
+                                                            plus_data += '<script>hljs.initHighlightingOnLoad();</script>'
+
+                                                            syntax_num = 1
+
+                                                        middle_list += ['pre']
+
+                                                        data = re.sub('{{{#!syntax ?((?:(?!\n).)*)\n?', '<pre id="syntax"><code class="' + middle_data_2[0] + '">', data, 1)
+                                                    else:
+                                                        middle_search = re.search('^#!html', middle_data[0])
+                                                        if middle_search:
+                                                            middle_list += ['span']
+
+                                                            data = re.sub('(?:{{{((?:(?! |{{{|}}}).)*) ?|(}}}))', '<span>', data, 1)
+                                                        else:
+                                                            middle_search = re.search('^#!folding', middle_data[0])
+                                                            if middle_search:
+                                                                middle_list += ['2div']
+
+                                                                folding_data = re.search('{{{#!folding ?((?:(?!\n).)*)\n?', data)
+                                                                if folding_data:
+                                                                    folding_data = folding_data.groups()
+                                                                else:
+                                                                    folding_data = ['Test']
+
+                                                                if folding_num == 0:
+                                                                    folding_num = 1
+
+                                                                fnum = random.randint(1000000,9999999)
+
+                                                                data = re.sub('{{{#!folding ?((?:(?!\n).)*)\n?', '<dl class="wiki-folding"><dt style="cursor: pointer; display:block; ">' + str(folding_data[0]) + '</dt><dd style="display: none;">', data, 1)
+
+                                                                fol_num += 1
+                                                            else:
+                                                                middle_search = re.search('^#!random', middle_data[0])
+                                                                if middle_search:
+                                                                    middle_data_2 = re.search('{{{#!random ((?:(?!\n).)+)\n?', data)
+                                                                    if middle_data_2:
+                                                                        middle_data_2 = middle_data_2.groups()
+                                                                    else:
+                                                                        middle_data_2 = ['50']
+
+                                                                    middle_list += ['span']
+
+                                                                    try:
+                                                                        if int(middle_data_2[0]) > 100 or int(middle_data_2[0]) < 0:
+                                                                            middle_data_2 = ['50']
+                                                                    except:
+                                                                        middle_data_2 = ['50']
+
+                                                                    rndcode = ""
+                                                                    for rp in range(1, int(middle_data_2[0])):
+                                                                        rndcode += "1"
+                                                                    for rp in range(1, 100 - int(middle_data_2[0])):
+                                                                        rndcode += "2"
+
+                                                                    if ''.join(random.choice(rndcode) for i in range(1)) != '1':
+                                                                        data = re.sub('{{{#!random ?((?:(?!\n).)*)\n?', '<span style="display: none;">', data, 1)
+                                                                    else:
+                                                                        data = re.sub('{{{#!random ?((?:(?!\n).)*)\n?', '<span>', data, 1)
+                                                                else:
+                                                                    middle_list += ['span']
+
+                                                                    data = middle_re.sub('<span>', data, 1)
                     else:
                         middle_list += ['code']
-                        
+
                         middle_stack += 1
-                        
+
                         data = middle_re.sub('<code>' + middle_data[0].replace('\\', '\\\\'), data, 1)
-                
+
                     middle_number += 1
             else:
                 if middle_list == []:
@@ -283,17 +345,17 @@ def middle_parser(data, fol_num, syntax_num, folding_num):
 
                     if middle_stack > 0:
                         data = middle_re.sub('&#125;&#125;&#125;', data, 1)
-                    else:                    
+                    else:
                         if middle_number > 0:
                             middle_number -= 1
-                            
+
                         if middle_list[middle_number] == '2div':
-                            data = middle_re.sub('</div_end></div_end></div_end>', data, 1)
+                            data = middle_re.sub('</dd></dl>', data, 1)
                         elif middle_list[middle_number] == 'pre':
                             data = middle_re.sub('</code></pre>', data, 1)
                         else:
                             data = middle_re.sub('</' + middle_list[middle_number] + '>', data, 1)
-                        
+
                         del(middle_list[middle_number])
         else:
             if middle_stack == 0:
@@ -307,17 +369,17 @@ def middle_parser(data, fol_num, syntax_num, folding_num):
 
                     if middle_stack > 0:
                         data += '&#125;&#125;&#125;'
-                    else:                    
+                    else:
                         if middle_number > 0:
                             middle_number -= 1
-                            
+
                         if middle_list[middle_number] == '2div':
-                            data += '</div_end></div_end></div_end>'
+                            data += '</dd></dl>'
                         elif middle_list[middle_number] == 'pre':
                             data += '</code></pre>'
                         else:
                             data += '</' + middle_list[middle_number] + '>'
-                        
+
                         del(middle_list[middle_number])
 
     num = 0
@@ -325,7 +387,7 @@ def middle_parser(data, fol_num, syntax_num, folding_num):
         nowiki_data = re.search('<code>((?:(?:(?!<\/code>).)*\n*)*)<\/code>', data)
         if nowiki_data:
             nowiki_data = nowiki_data.groups()
-            
+
             num += 1
 
             end_data += [['nowiki_' + str(num), nowiki_data[0], 'code']]
@@ -349,7 +411,7 @@ def middle_parser(data, fol_num, syntax_num, folding_num):
             break
 
     return [data, [fol_num, syntax_num, folding_num]]
-    
+
 def link_fix(main_link):
     if re.search('^:', main_link):
         main_link = re.sub('^:', '', main_link)
@@ -361,11 +423,17 @@ def link_fix(main_link):
         main_link = re.sub('(#.+)$', '', main_link)
     else:
         other_link = ''
-        
+
     return [main_link, other_link]
+
+#https://www.tutorialexample.com/python-replace-string-with-case-insensitive-for-beginners-python-tutorial/
+def stringReplace(old, new, str, caseinsentive = False):
+    return re.sub(re.escape(old), new, str, flags=re.IGNORECASE)
 
 def namu(conn, data, title, main_num):
     curs = conn.cursor()
+
+    htcls = None
 
     global plus_data
     global end_data
@@ -375,7 +443,7 @@ def namu(conn, data, title, main_num):
 
     backlink = []
     end_data = []
-    
+
     data = re.sub('<math>(?P<in>(?:(?!<\/math>).)+)<\/math>', '[math(\g<in>)]', data)
     data = html.escape(data)
 
@@ -384,12 +452,56 @@ def namu(conn, data, title, main_num):
     t_data = middle_parser(data, 0, 0, 0)
     data = t_data[0]
 
+    curs.execute('select html from html_filter')
+    html_db = curs.fetchall()
+
+    src_list = ["www.youtube.com", "serviceapi.nmv.naver.com", "tv.kakao.com", "www.google.com", "serviceapi.rmcnmv.naver.com"]
+    html_list = ['audio', 'div', 'span', 'embed', 'iframe', 'ruby', 'rp', 'rt', 'a', 'button', 'textarea', 'select', 'option', 'input', 'frame', 'frameset', 'br', 'b', 'strong', 'del', 'strike', 's', 'style', 'button', 'em', 'i', 'sup', 'sub', 'progress', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'dd', 'dt', 'dl', 'ul', 'ol', 'p', 'small', 'hr', 'abbr', 'pre', 'code', 'ruby', 'rp', 'rt', 'rb', 'rtc', 'svg', 'img', 'table', 'td', 'tr', 'tbody', 'thead', 'th', 'tfoot', 'fieldset', 'legend', 'label', 'object', 'dir', 'big', 'center', 'noframe', 'tt', 'marquee', 'blink']
+
+    html_data = re.findall('&lt;(\/)?((?:(?!&gt;| ).)+)( (?:(?:(?!&gt;).)+)?)?&gt;', data)
+    for in_data in html_data:
+        if in_data[0] == '':
+            if in_data[1] in html_list or (html_db and in_data[1] in html_db[0]):
+                if re.search('&lt;\/' + in_data[1] + '&gt;', data):
+                    src = re.search('src=([^ ]*)', in_data[2])
+                    if src:
+                        v_src = re.search('http(?:s)?:\/\/([^/\'" ]*)', src.groups()[0])
+                        if v_src:
+                            and_data = re.sub('&#x27;', '\'', re.sub('&quot;', '"', in_data[2]))
+                        else:
+                            and_data = re.sub('&#x27;', '\'', re.sub('&quot;', '"', re.sub('src=([^ ]*)', '', in_data[2])))
+                    else:
+                        and_data = re.sub('&#x27;', '\'', re.sub('&quot;', '"', in_data[2]))
+
+
+                    data = data.replace('&lt;' + in_data[1] + in_data[2] + '&gt;', '<' + in_data[1] + and_data + '>', 1)
+                    data = re.sub('&lt;\/' + in_data[1] + '&gt;', '</' + in_data[1] + '>', data, 1)
+                    data = stringReplace('onmouseover="', 'data-dummydata="', data, True)
+                    data = stringReplace('onclick="', 'data-dummydata="', data, True)
+                    data = stringReplace('onmouseout="', 'data-dummydata="', data, True)
+                    data = stringReplace('onmousedown="', 'data-dummydata="', data, True)
+                    data = stringReplace('onmouseup="', 'data-dummydata="', data, True)
+                    data = stringReplace('onmousemove="', 'data-dummydata="', data, True)
+                    data = stringReplace('onkeydown="', 'data-dummydata="', data, True)
+                    data = stringReplace('onkeypress="', 'data-dummydata="', data, True)
+                    data = stringReplace('onkeyup="', 'data-dummydata="', data, True)
+                    data = stringReplace('onload="', 'data-dummydata="', data, True)
+                    data = stringReplace('onunload="', 'data-dummydata="', data, True)
+                    data = stringReplace('onsubmit="', 'data-dummydata="', data, True)
+                    data = stringReplace('javascript:', '', data, True)
+                    data = stringReplace('<a ', '<a target="_blank" ', data, True)
+                    data = stringReplace(':hover', '', data, True)
+                    data = stringReplace(':active', '', data, True)
+                    data = stringReplace(':visited', '', data, True)
+                    data = stringReplace(':focus', '', data, True)
+
+
     include_re = re.compile('\[include\(((?:(?!\)\]).)+)\)\]', re.I)
     while 1:
         include = include_re.search(data)
         if include:
             include = include.groups()[0]
-    
+
             include_data = re.search('^((?:(?!,).)+)', include)
             if include_data:
                 include_data = include_data.groups()[0]
@@ -401,7 +513,7 @@ def namu(conn, data, title, main_num):
             backlink += [[title, include_link, 'include']]
 
             include = re.sub('^((?:(?!,).)+)', '', include)
-            
+
             num = 0
             while 1:
                 include_one_nowiki = re.search('(?:\\\\){2}(.)', include)
@@ -432,7 +544,7 @@ def namu(conn, data, title, main_num):
                     else:
                         break
 
-                include_parser = re.sub('\[\[(?:category|분류):(((?!\]\]|#include).)+)\]\]', '', include_parser)
+                include_parser = re.sub('\[\[(?:분류|분류):(((?!\]\]|#include).)+)\]\]', '', include_parser)
 
                 data = include_re.sub('<include>' + include_parser + '\n</include>', data, 1)
             else:
@@ -451,7 +563,7 @@ def namu(conn, data, title, main_num):
     data = re.sub('\|\|( +)\n', '||\n', data)
 
     data = re.sub('\n##(((?!\n).)+)', '', data)
-           
+
     while 1:
         wiki_table_data = re.search('<div id="wiki_div" ((?:(?!>).)+)>((?:(?!<div id="wiki_div"|<\/div_end>).\n*)+)<\/div_end>', data)
         if wiki_table_data:
@@ -464,19 +576,19 @@ def namu(conn, data, title, main_num):
             data = re.sub('<div id="wiki_div" ((?:(?!>).)+)>((?:(?!<div id="wiki_div"|<\/div_end>).\n*)+)<\/div_end>', '<div ' + wiki_table_data[0] + '>' + end_parser + '</div>', data, 1)
         else:
             break
-            
+
     data = re.sub('<\/div_end>', '</div>', data)
     data = re.sub('<\/td>', '</td_end>', data)
-    
+
     first = 0
     math_re = re.compile('\[math\(((?:(?!\)\]).)+)\)\]', re.I)
     while 1:
         math = math_re.search(data)
         if math:
             math = math.groups()[0]
-            
+
             first += 1
-            
+
             data = math_re.sub('<span id="math_' + str(first) + '"></span>', data, 1)
 
             plus_data += '''
@@ -489,7 +601,7 @@ def namu(conn, data, title, main_num):
             '''
         else:
             break
-            
+
     num = 0
     while 1:
         one_nowiki = re.search('(?:\\\\)(.)', data)
@@ -508,10 +620,10 @@ def namu(conn, data, title, main_num):
 
     data = data.replace('\\', '&#92;')
 
-    data = re.sub('&#x27;&#x27;&#x27;(?P<in>((?!&#x27;&#x27;&#x27;).)+)&#x27;&#x27;&#x27;', '<b>\g<in></b>', data)
-    data = re.sub('&#x27;&#x27;(?P<in>((?!&#x27;&#x27;).)+)&#x27;&#x27;', '<i>\g<in></i>', data)
-    data = re.sub('~~(?P<in>(?:(?!~~).)+)~~', '<s style="color: gray;">\g<in></s>', data)
-    data = re.sub('--(?P<in>(?:(?!--).)+)--', '<s style="color: gray;">\g<in></s>', data)
+    data = re.sub('&#x27;&#x27;&#x27;(?P<in>((?!&#x27;&#x27;&#x27;).)+)&#x27;&#x27;&#x27;', '<strong>\g<in></strong>', data)
+    data = re.sub('&#x27;&#x27;(?P<in>((?!&#x27;&#x27;).)+)&#x27;&#x27;', '<em>\g<in></em>', data)
+    data = re.sub('~~(?P<in>(?:(?!~~).)+)~~', '<del>\g<in></del>', data)
+    data = re.sub('--(?P<in>(?:(?!--).)+)--', '<del>\g<in></del>', data)
     data = re.sub('__(?P<in>(?:(?!__).)+)__', '<u>\g<in></u>', data)
     data = re.sub('\^\^(?P<in>(?:(?!\^\^).)+)\^\^', '<sup>\g<in></sup>', data)
     data = re.sub(',,(?P<in>(?:(?!,,).)+),,', '<sub>\g<in></sub>', data)
@@ -520,33 +632,33 @@ def namu(conn, data, title, main_num):
     redirect = redirect_re.search(data)
     if redirect:
         redirect = redirect.groups()[0]
-        
+
         return_link = link_fix(redirect)
         main_link = return_link[0]
         other_link = return_link[1]
-        
+
         backlink += [[title, main_link, 'redirect']]
-        
+
         data = redirect_re.sub('​#​r​e​d​i​r​e​c​t​ ' + ' [[' + main_link + ']]', data, 1)
 
     no_toc_re = re.compile('', re.I)
-    toc_re = re.compile('\[(?:목차|toc)\]', re.I)
+    toc_re = re.compile('\[(?:목차|tableofcontents)\]', re.I)
     if not no_toc_re.search(data):
         if not toc_re.search(data):
             data = re.sub('\n(?P<in>={1,6}) ?(?P<out>(?:(?!=).)+) ?={1,6}\n', '\n[toc]\n\g<in> \g<out> \g<in>\n', data, 1)
     else:
         data = no_toc_re.sub('', data)
-        
+
     toc_full = 0
     toc_top_stack = 6
     toc_stack = [0, 0, 0, 0, 0, 0]
     edit_number = 0
-    toc_data = '<div id="toc"><span id="toc_title" style="font-size: 18px;">목차</span>\n\n'
+    toc_data = '<div id="toc" class="wiki-macro-toc"><div class=toc-indent>'
     while 1:
         toc = re.search('\n(={1,6}) ?((?:(?!\n).)+) ?\n', data)
         if toc:
             toc = toc.groups()
-            
+
             toc_number = len(toc[0])
             edit_number += 1
 
@@ -556,8 +668,8 @@ def namu(conn, data, title, main_num):
 
             if toc_top_stack > toc_number:
                 toc_top_stack = toc_number
-                    
-            toc_full = toc_number        
+
+            toc_full = toc_number
             toc_stack[toc_number - 1] += 1
             toc_number = str(toc_number)
             all_stack = ''
@@ -572,38 +684,48 @@ def namu(conn, data, title, main_num):
                     break
 
             all_stack = re.sub('^0\.', '', all_stack)
-            
-            data = re.sub('\n(={1,6}) ?((?:(?!\n).)+) ?\n', '\n<h' + toc_number + ' style="cursor: pointer;" id="s-' + re.sub('\.$', '', all_stack) + '"><a href="#toc">' + all_stack + '</a> ' + re.sub('=*$', '', toc[1]) + ' <span style="font-size: 12px; float:right"><a href="/edit/' + tool.url_pas(title) + '?section=' + str(edit_number) + '"><b>[편집]</b></a></span></h' + toc_number + '>\n', data, 1)
+            htcls = 1
+            if all_stack == '1.':
+                dcls = ''
+            else:
+                dcls = '</div>'
+            data = re.sub('\n(={1,6}) ?((?:(?!\n).)+) ?\n', dcls + '\n<h' + toc_number + ' class="wiki-heading" style="cursor: pointer; margin: 0px;" id="s-' + re.sub('\.$', '', all_stack) + '"><a href="#toc">' + all_stack + '</a> ' + re.sub('=*$', '', toc[1]) + ' <span style="font-size: 12px; float:right"><a href="/edit/' + tool.url_pas(title) + '?section=' + str(edit_number) + '"><b>[편집]</b></a></span></h' + toc_number + '><div class="wiki-heading-content">\n', data, 1)
 
             toc_main_data = toc[1]
             toc_main_data = re.sub('=*$', '', toc_main_data)
             toc_main_data = re.sub('\[\*((?:(?! |\]).)*)(?: ((?:(?!(\[\*(?:(?:(?!\]).)+)\]|\])).)+))?\]', '', toc_main_data)
             toc_main_data = re.sub('<span id="math_[0-9]"><\/span>', '(수식)', toc_main_data)
-            
-            toc_data += '<span style="margin-left: ' + str((toc_full - toc_top_stack) * 10) + 'px;"><a href="#s-' + re.sub('\.$', '', all_stack) + '">' + all_stack + '</a> ' + toc_main_data + '</span>\n'
+
+            toc_data += '<span class=toc-item style="margin-left: ' + str((toc_full - toc_top_stack) * 10) + 'px;"><a href="#s-' + re.sub('\.$', '', all_stack) + '">' + all_stack + '</a> ' + toc_main_data + '</span>'
         else:
             break
 
-    toc_data += '</div>'
-    
+        #-------------------------------------------------------
+
+
+
+    toc_data += '</div></div>'
+
     data = toc_re.sub(toc_data, data)
 
     data = tool.savemark(data)
-    
+
     anchor_re = re.compile("\[anchor\((?P<in>(?:(?!\)\]).)+)\)\]", re.I)
     data = anchor_re.sub('<span id="\g<in>"></span>', data)
 
     ruby_re = re.compile("\[ruby\((?P<in>(?:(?!,).)+)\, ?ruby=(?P<out>(?:(?!\)\]|,).)+)(?:\, ?color=(?P<under>(?:(?!\)\]).)+))?\)\]", re.I)
     data = ruby_re.sub('<ruby>\g<in><rp>(</rp><rt style="color: \g<under>">\g<out></rt><rp>)</rp></ruby>', data)
 
+
+
     now_time = tool.get_time()
 
     date_re = re.compile('\[date\]', re.I)
     data = date_re.sub(now_time, data)
-    
+
     time_data = re.search('^([0-9]{4}-[0-9]{2}-[0-9]{2})', now_time)
     time = time_data.groups()
-    
+
     age_re = re.compile('\[age\(([0-9]{4}-[0-9]{2}-[0-9]{2})\)\]', re.I)
     while 1:
         age_data = age_re.search(data)
@@ -612,9 +734,9 @@ def namu(conn, data, title, main_num):
 
             old = datetime.datetime.strptime(time[0], '%Y-%m-%d')
             will = datetime.datetime.strptime(age, '%Y-%m-%d')
-            
+
             e_data = old - will
-            
+
             data = age_re.sub(str(int(e_data.days / 365)), data, 1)
         else:
             break
@@ -627,9 +749,9 @@ def namu(conn, data, title, main_num):
 
             old = datetime.datetime.strptime(time[0], '%Y-%m-%d')
             will = datetime.datetime.strptime(dday, '%Y-%m-%d')
-            
+
             e_data = old - will
-            
+
             if re.search('^-', str(e_data.days)):
                 e_day = str(e_data.days)
             else:
@@ -646,13 +768,13 @@ def namu(conn, data, title, main_num):
         video = video_re.search(data)
         if video:
             video = video.groups()
-            
+
             width = re.search(', ?width=((?:(?!,).)+)', video[1])
             if width:
                 video_width = width.groups()[0]
             else:
                 video_width = '560'
-            
+
             height = re.search(', ?height=((?:(?!,).)+)', video[1])
             if height:
                 video_height = height.groups()[0]
@@ -668,16 +790,16 @@ def namu(conn, data, title, main_num):
             if youtube_re.search(video[0]):
                 video_code = re.sub('^https:\/\/www\.youtube\.com\/watch\?v=', '', video_code)
                 video_code = re.sub('^https:\/\/youtu\.be\/', '', video_code)
-                
+
                 video_src = 'https://www.youtube.com/embed/' + video_code
             elif kakaotv_re.search(video[0]):
                 video_code = re.sub('^https:\/\/tv\.kakao\.com\/channel\/9262\/cliplink\/', '', video_code)
                 video_code = re.sub('^http:\/\/tv\.kakao\.com\/v\/', '', video_code)
-                
+
                 video_src = 'https://tv.kakao.com/embed/player/cliplink/' + video_code +'?service=kakao_tv'
             else:
                 video_src = 'https://embed.nicovideo.jp/watch/' + video_code
-                
+
             data = video_re.sub('<iframe width="' + video_width + '" height="' + video_height + '" src="' + video_src + '" allowfullscreen frameborder="0"></iframe>', data, 1)
         else:
             break
@@ -686,12 +808,12 @@ def namu(conn, data, title, main_num):
         block = re.search('(\n(?:&gt; ?(?:(?:(?!\n).)+)?\n)+)', data)
         if block:
             block = block.groups()[0]
-            
+
             block = re.sub('^\n&gt; ?', '', block)
             block = re.sub('\n&gt; ?', '\n', block)
             block = re.sub('\n$', '', block)
-            
-            data = re.sub('(\n(?:&gt; ?(?:(?:(?!\n).)+)?\n)+)', '\n<blockquote style="padding: 1em calc(2em + 25px) 1em 1em;margin: 1em 0;background: #eee;display: table;border: 2px dashed #ccc;border-left: 5px solid #71bc6d;">' + block + '</blockquote>\n', data, 1)
+
+            data = re.sub('(\n(?:&gt; ?(?:(?:(?!\n).)+)?\n)+)', '\n<blockquote class="wiki-quote">' + block + '</blockquote>\n', data, 1)
         else:
             break
 
@@ -714,15 +836,22 @@ def namu(conn, data, title, main_num):
                     sub_li = sub_li.groups()
 
                     if len(sub_li[0]) == 0:
-                        margin = 20
+                        continue
                     else:
-                        margin = len(sub_li[0]) * 20
+                        liststyle = 'disc'
+                        margin = len(sub_li[0]) * 20 - 20
+                        if margin == 0:
+                            liststyle = 'disc'
+                        elif margin == 20:
+                            liststyle = 'circle'
+                        else:
+                            liststyle = 'square'
 
-                    li = re.sub('\n(?:( *)\* ?((?:(?!\n).)+))', '<li style="margin-left: ' + str(margin) + 'px;">' + sub_li[1] + '</li>', li, 1)
+                    li = re.sub('\n(?:( *)\* ?((?:(?!\n).)+))', '<li style="margin-left: ' + str(margin) + 'px; list-style-type: ' + liststyle + ' !important;; list-style: ' + liststyle + ' !important;">' + sub_li[1] + '</li>', li, 1)
                 else:
                     break
 
-            data = re.sub('(\n(?:(?: *)\* ?(?:(?:(?!\n).)+)\n)+)', '\n\n<ul>' + li + '</ul>\n', data, 1)
+            data = re.sub('(\n(?:(?: *)\* ?(?:(?:(?!\n).)+)\n)+)', '\n\n<ul class=wiki-list>' + li + '</ul>\n', data, 1)
         else:
             break
 
@@ -732,33 +861,33 @@ def namu(conn, data, title, main_num):
         indent = re.search('\n( +)', data)
         if indent:
             indent = len(indent.groups()[0])
-            
+
             margin = '<span style="margin-left: 20px;"></span>' * indent
-            
+
             data = re.sub('\n( +)', '\n' + margin, data, 1)
         else:
             break
 
     data = table_start(data)
 
-    category = '\n<div id="cate_all"><hr><div id="cate">분류: '
-    category_re = re.compile('^(?:category|분류):', re.I)
+    category = '<div class="wiki-category"><h2>분류</h2> <ul>'
+    category_re = re.compile('^(?:분류|분류):', re.I)
     while 1:
         link = re.search('\[\[((?:(?!\[\[|\]\]).)+)\]\]', data)
         if link:
             link = link.groups()[0]
-            
+
             link_split = re.search('((?:(?!\|).)+)(?:\|((?:(?!\|).)+))', link)
             if link_split:
                 link_split = link_split.groups()
-                
+
                 main_link = link_split[0]
                 see_link = link_split[1]
             else:
                 main_link = link
                 see_link = link
 
-            if re.search('^((?:file|파일)|(?:out|외부)):', main_link):
+            if re.search('^((?:파일|파일)|(?:외부파일|외부파일)):', main_link):
                 file_style = ''
 
                 width = re.search('width=((?:(?!&).)+)', see_link)
@@ -768,7 +897,7 @@ def namu(conn, data, title, main_num):
                         file_style += 'width: ' + file_width + ';'
                     else:
                         file_style += 'width: ' + file_width + 'px;'
-                
+
                 height = re.search('height=((?:(?!&).)+)', see_link)
                 if height:
                     file_height = height.groups()[0]
@@ -787,13 +916,13 @@ def namu(conn, data, title, main_num):
                 else:
                     file_align = ''
 
-                if re.search('^(?:out|외부):', main_link):
-                    file_src = re.sub('^(?:out|외부):', '', main_link)
-            
+                if re.search('^(?:외부파일|외부파일):', main_link):
+                    file_src = re.sub('^(?:외부파일|외부파일):', '', main_link)
+
                     file_alt = main_link
                     exist = 'Yes'
                 else:
-                    file_data = re.search('^(?:file|파일):((?:(?!\.).)+)\.(.+)$', main_link)
+                    file_data = re.search('^(?:파일|파일):((?:(?!\.).)+)\.(.+)$', main_link)
                     if file_data:
                         file_data = file_data.groups()
                         file_name = file_data[0]
@@ -801,37 +930,50 @@ def namu(conn, data, title, main_num):
 
                         backlink += [[title, main_link, 'file']]
                     else:
-                        file_name = 'TEST'
-                        file_end = 'jpg'
+                        file_name = '제목없음'
+                        file_end = 'BMP'
 
-                    file_src = '/image/' + tool.sha224(file_name) + '.' + file_end
-                    file_alt = '파일:' + file_name + '.' + file_end
+                    fnfn = re.sub('^파일:', '', main_link)
+                    fileExtension = os.path.splitext(fnfn)[1]
+                    fileName = os.path.splitext(fnfn)[0]
+
+                    file_src = '/image/' + tool.sha224(fileName) + os.path.splitext(fnfn)[1]
+                    file_alt = '파일:' + fnfn
 
                     curs.execute("select title from data where title = ?", [file_alt])
                     exist = curs.fetchall()
-                
+
                 if exist:
-                    data = re.sub('\[\[((?:(?!\[\[|\]\]).)+)\]\]', '<a href="/w/' + str(tool.url_pas(file_alt)).replace('파일:', '파일:') + '"><span href="/w/' + tool.url_pas(file_alt) + '" style="' + file_align + '"><img href="/w/' + tool.url_pas(file_alt) + '" style="cursor:pointer;' + file_style + '" alt="' + file_alt + '" src="' + file_src + '"></span></a>', data, 1)
+                    data = re.sub('\[\[((?:(?!\[\[|\]\]).)+)\]\]', '<span class=wiki-image-align-normal><span class=wiki-image-wrapper><a href="/w/' + str(tool.url_pas(file_alt)).replace('파일:', '파일:') + '"><span href="/w/' + tool.url_pas(file_alt) + '" style="' + file_align + '"><img class="wiki-image" href="/w/' + tool.url_pas(file_alt) + '" style="cursor:pointer;position:initial;' + file_style + '" alt="' + file_alt + '" src="' + file_src + '"></span></a></span></span>', data, 1)
                 else:
-                    data = re.sub('\[\[((?:(?!\[\[|\]\]).)+)\]\]', '<a id="not_thing" href="/w/' + tool.url_pas(file_alt) + '">' + file_alt + '</a>', data, 1)
+                    data = re.sub('\[\[((?:(?!\[\[|\]\]).)+)\]\]', '<a class="wiki-link-internal not-exist" href="/w/' + tool.url_pas(file_alt) + '">' + file_alt + '</a>', data, 1)
             elif category_re.search(main_link):
                 see_link = re.sub('#include', '', see_link)
+                see_link = re.sub('#blur', '', see_link)
                 main_link = re.sub('#include', '', category_re.sub('분류:', main_link))
-
+                link_id = 'class="wiki-link-internal'
+                category += '<li'
                 if re.search('#blur', main_link):
-                    see_link = 'Hidden'
-                    link_id = 'id="inside"'
-                    
+                    category += ' class="wiki-category-blur"'
+
                     main_link = re.sub('#blur', '', main_link)
                 else:
-                    link_id = ''
+                    link_id += ''
+                category += '>'
 
                 backlink += [[title, main_link, 'cat']]
 
-                category += '<a ' + link_id + ' href="' + tool.url_pas(main_link) + '">' + category_re.sub('', see_link) + '</a> | '
+                curs.execute("select data from data where title = ?", [main_link])
+                link_id = ''
+                if not(curs.fetchall()):
+                    link_id = ' class=not-exist'
+
+
+                category += ' <a href="/w/' + tool.url_pas(main_link) + '"' + link_id + '>' + category_re.sub('', see_link) + '</a>'
+                category += '</li>'
                 data = re.sub('\[\[((?:(?!\[\[|\]\]).)+)\]\]', '', data, 1)
             elif re.search('^wiki:', main_link):
-                data = re.sub('\[\[((?:(?!\[\[|\]\]).)+)\]\]', '<a id="inside" href="/' + tool.url_pas(re.sub('^wiki:', '', main_link)) + '">' + see_link + '</a>', data, 1)
+                data = re.sub('\[\[((?:(?!\[\[|\]\]).)+)\]\]', '<a class="inside" href="/' + tool.url_pas(re.sub('^wiki:', '', main_link)) + '">' + see_link + '</a>', data, 1)
             elif re.search('^inter:((?:(?!:).)+):', main_link):
                 inter_data = re.search('^inter:((?:(?!:).)+):((?:(?!\]\]|\|).)+)', main_link)
                 inter_data = inter_data.groups()
@@ -840,9 +982,9 @@ def namu(conn, data, title, main_num):
                 inter = curs.fetchall()
                 if inter:
                     if see_link != main_link:
-                        data = re.sub('\[\[((?:(?!\[\[|\]\]).)+)\]\]', '<a id="inside" href="' + inter[0][0] + inter_data[1] + '">' + inter_data[0] + ':' + see_link + '</a>', data, 1)
+                        data = re.sub('\[\[((?:(?!\[\[|\]\]).)+)\]\]', '<a class="inside" href="' + inter[0][0] + inter_data[1] + '">' + inter_data[0] + ':' + see_link + '</a>', data, 1)
                     else:
-                        data = re.sub('\[\[((?:(?!\[\[|\]\]).)+)\]\]', '<a id="inside" href="' + inter[0][0] + inter_data[1] + '">' + inter_data[0] + ':' + inter_data[1] + '</a>', data, 1)
+                        data = re.sub('\[\[((?:(?!\[\[|\]\]).)+)\]\]', '<a class="inside" href="' + inter[0][0] + inter_data[1] + '">' + inter_data[0] + ':' + inter_data[1] + '</a>', data, 1)
                 else:
                     data = re.sub('\[\[((?:(?!\[\[|\]\]).)+)\]\]', 'Not exist', data, 1)
             elif re.search('^\/', main_link):
@@ -854,7 +996,7 @@ def namu(conn, data, title, main_num):
                 else:
                     data = re.sub('\[\[((?:(?!\[\[|\]\]).)+)\]\]', '[[' + title + under_title + ']]', data, 1)
             elif re.search('^http(s)?:\/\/', main_link):
-                data = re.sub('\[\[((?:(?!\[\[|\]\]).)+)\]\]', '<a id="out_link" rel="nofollow" href="' + main_link + '" target="_blank">' + see_link + '</a>', data, 1)
+                data = re.sub('\[\[((?:(?!\[\[|\]\]).)+)\]\]', '<a class="wiki-link-external" rel="nofollow" href="' + main_link + '" target="_blank">' + see_link + '</a>', data, 1)
             else:
                 return_link = link_fix(main_link)
                 main_link = return_link[0]
@@ -866,20 +1008,20 @@ def namu(conn, data, title, main_num):
                     main_link = re.sub('\.\.\/\/', '/', main_link)
                 elif re.search('^\.\.\/', main_link):
                     main_link = re.sub('^\.\.\/', re.sub('(?P<in>.+)\/.*$', '\g<in>', title), main_link)
-                
+
                 if not re.search('^\|', main_link):
                     if main_link != title:
                         if main_link != '':
                             curs.execute("select title from data where title = ?", [main_link])
                             if not curs.fetchall():
-                                link_id = 'id="not_thing"'
+                                link_id = 'class="wiki-link-internal not-exist"'
 
                                 backlink += [[title, main_link, 'no']]
                             else:
-                                link_id = ''
-                        
+                                link_id = 'class="wiki-link-internal"'
+
                             backlink += [[title, main_link, '']]
-                            
+
                             data = re.sub('\[\[((?:(?!\[\[|\]\]).)+)\]\]', '<a ' + link_id + ' href="/w/' + tool.url_pas(main_link) + other_link + '">' + see_link + '</a>', data, 1)
                         else:
                             data = re.sub('\[\[((?:(?!\[\[|\]\]).)+)\]\]', '<a href="' + other_link + '">' + see_link + '</a>', data, 1)
@@ -899,15 +1041,141 @@ def namu(conn, data, title, main_num):
     data = dt_re.sub(str(datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S")), data)
     dt2_re = re.compile('\[datetime\]', re.I)
     data = dt2_re.sub(str(datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S")), data)
-            
+
+    curs.execute("select count(title) from data")
+    dccntlst = curs.fetchall()
+    if dccntlst:
+        dccnt = str(dccntlst[0][0])
+    else:
+        dccnt = '0'
+    pc_re = re.compile('\[pagecount\]', re.I)
+    data = pc_re.sub(dccnt, data)
+
+    # --------------------------------------------------------------------------------------------
+    curs.execute("select count(title) from data where title like '사용자:%'")
+    dccntlst = curs.fetchall()
+    if dccntlst:
+        dccnt = str(dccntlst[0][0])
+    else:
+        dccnt = '0'
+    pc_re = re.compile('\[pagecount\(사용자\)\]', re.I)
+    data = pc_re.sub(dccnt, data)
+
+    # --------------------------------------------------------------------------------------------
+    curs.execute("select count(title) from data where title like '분류:%'")
+    dccntlst = curs.fetchall()
+    if dccntlst:
+        dccnt = str(dccntlst[0][0])
+    else:
+        dccnt = '0'
+    pc_re = re.compile('\[pagecount\(분류\)\]', re.I)
+    data = pc_re.sub(dccnt, data)
+
+    # --------------------------------------------------------------------------------------------
+    curs.execute("select count(title) from data where title like '파일:%'")
+    dccntlst = curs.fetchall()
+    if dccntlst:
+        dccnt = str(dccntlst[0][0])
+    else:
+        dccnt = '0'
+    pc_re = re.compile('\[pagecount\(파일\)\]', re.I)
+    data = pc_re.sub(dccnt, data)
+
+    # --------------------------------------------------------------------------------------------
+    curs.execute("select count(title) from data where title like '틀:%'")
+    dccntlst = curs.fetchall()
+    if dccntlst:
+        dccnt = str(dccntlst[0][0])
+    else:
+        dccnt = '0'
+    pc_re = re.compile('\[pagecount\(틀\)\]', re.I)
+    data = pc_re.sub(dccnt, data)
+
+    # --------------------------------------------------------------------------------------------
+    curs.execute("select count(title) from data where not title like '%:%'")
+    dccntlst = curs.fetchall()
+    if dccntlst:
+        dccnt = str(dccntlst[0][0])
+    else:
+        dccnt = '0'
+    pc_re = re.compile('\[pagecount\(문서\)\]', re.I)
+    data = pc_re.sub(dccnt, data)
+
+    # --------------------------------------------------------------------------------------------
+    curs.execute("select count(title) from data where title like '특수기능:%'")
+    dccntlst = curs.fetchall()
+    if dccntlst:
+        dccnt = str(dccntlst[0][0])
+    else:
+        dccnt = '0'
+    pc_re = re.compile('\[pagecount\(특수기능\)\]', re.I)
+    data = pc_re.sub(dccnt, data)
+
+    # --------------------------------------------------------------------------------------------
+    curs.execute('select data from other where name = ?', ['name'])
+    wikilsssa = curs.fetchall()
+    if wikilsssa:
+        wikiname = wikilsssa[0][0]
+    else:
+        wikiname = 'Wiki'
+
+    curs.execute("select count(title) from data where title like ? || ':%'", [wikiname])
+    dccntlst = curs.fetchall()
+    if dccntlst:
+        dccnt = str(dccntlst[0][0])
+    else:
+        dccnt = '0'
+    pc_re = re.compile('\[pagecount\(' + wikiname + '\)\]', re.I)
+    data = pc_re.sub(dccnt, data)
+
+    # --------------------------------------------------------------------------------------------
+    curs.execute("select count(title) from data where title like '토론:%'")
+    dccntlst = curs.fetchall()
+    if dccntlst:
+        dccnt = str(dccntlst[0][0])
+    else:
+        dccnt = '0'
+    pc_re = re.compile('\[pagecount\(토론\)\]', re.I)
+    data = pc_re.sub(dccnt, data)
+
+    # --------------------------------------------------------------------------------------------
+    curs.execute("select count(title) from data where title like '휴지통:%'")
+    dccntlst = curs.fetchall()
+    if dccntlst:
+        dccnt = str(dccntlst[0][0])
+    else:
+        dccnt = '0'
+    pc_re = re.compile('\[pagecount\(휴지통\)\]', re.I)
+    data = pc_re.sub(dccnt, data)
+
+    # --------------------------------------------------------------------------------------------
+    curs.execute("select count(title) from data where title like '투표:%'")
+    dccntlst = curs.fetchall()
+    if dccntlst:
+        dccnt = str(dccntlst[0][0])
+    else:
+        dccnt = '0'
+    pc_re = re.compile('\[pagecount\(투표\)\]', re.I)
+    data = pc_re.sub(dccnt, data)
+
+    # --------------------------------------------------------------------------------------------
+    curs.execute("select count(title) from data where title like '연습장:%'")
+    dccntlst = curs.fetchall()
+    if dccntlst:
+        dccnt = str(dccntlst[0][0])
+    else:
+        dccnt = '0'
+    pc_re = re.compile('\[pagecount\(연습장\)\]', re.I)
+    data = pc_re.sub(dccnt, data)
+
     footnote_number = 0
-    
+
     footnote_all = []
     footnote_dict = {}
     footnote_re = {}
-    
-    footdata_all = '\n<hr><ul id="footnote_data">'
-    
+
+    footdata_all = '\n<hr><ul style="margin-left: 0px" id="footnote_data">'
+
     re_footnote = re.compile('(?:\[\*((?:(?! |\]).)*)(?: ((?:(?!(?:\[\*|\])).)+))?\]|(\[(?:각주|footnote)\]))')
     while 1:
         footnote = re_footnote.search(data)
@@ -915,19 +1183,19 @@ def namu(conn, data, title, main_num):
             footnote_data = footnote.groups()
             if footnote_data[2]:
                 footnote_all.sort()
-                
+
                 for footdata in footnote_all:
                     if footdata[2] == 0:
                         footdata_in = ''
                     else:
                         footdata_in = footdata[2]
 
-                    footdata_all += '<a href="#rfn-' + str(footdata[0]) + '">(' + footdata[1] + ')</a> <span id="fn-' + str(footdata[0]) + '">' + footdata_in + '</span>'
-                
+                    footdata_all += '<a href="#rfn-' + str(footdata[0]) + '">[' + footdata[1] + ']</a> <span id="fn-' + str(footdata[0]) + '">' + footdata_in + '</span><br>'
+
                 data = re_footnote.sub(footdata_all + '</ul>', data, 1)
-                
+
                 footnote_all = []
-                footdata_all = '\n<hr><ul id="footnote_data">'
+                footdata_all = '\n<hr><ul style="margin-left: 0px" id="footnote_data">'
             else:
                 footnote = footnote_data[1]
                 footnote_name = footnote_data[0]
@@ -940,7 +1208,10 @@ def namu(conn, data, title, main_num):
 
                         footnote_all += [[float(footshort), footshort, 0]]
 
-                        data = re_footnote.sub('<sup><a href="javascript:open_foot(\'fn-' + footshort + '\')" id="rfn-' + footshort + '">[' + footnote_name + ']</a></sup><span class="foot_plus" id="cfn-' + footshort + '"></span>', data, 1)
+                        try:
+                            data = re_footnote.sub('<sup><a class="wiki-fn-content" title="' + re.sub('[<].*[>]', '', re.sub('[<][/].*[>]', '', footnote_all[int(footshort) - 1][2])) + '" href="#fn-' + footshort + '" id="rfn-' + footshort + '"><span class="target" id="rfn-' + footshort + '"></span>[' + footnote_name + ']</a></sup><span class="foot_plus" id="cfn-' + footshort + '"></span>', data, 1)
+                        except:
+                            data = re_footnote.sub('<sup><a class="wiki-fn-content" href="#fn-' + footshort + '" id="rfn-' + footshort + '"><span class="target" id="rfn-' + footshort + '"></span>[' + footnote_name + ']</a></sup><span class="foot_plus" id="cfn-' + footshort + '"></span>', data, 1)
                     else:
                         data = re_footnote.sub('<sup><a href="#">[' + footnote_name + ']</a></sup>', data, 1)
                 else:
@@ -957,37 +1228,42 @@ def namu(conn, data, title, main_num):
                         footnote_re[footnote_name] += 1
 
                     footnote_all += [[footnote_number, footnote_name, footnote]]
-                    
-                    data = re_footnote.sub('<sup><a href="javascript:open_foot(\'fn-' + str(footnote_number) + '\')" id="rfn-' + str(footnote_number) + '">[' + footnote_name + ']</a></sup><span class="foot_plus" id="cfn-' + str(footnote_number) + '"></span>', data, 1)
+                    try:
+                        data = re_footnote.sub('<sup><a class="wiki-fn-content" title="' + re.sub('[<].*[>]', '', re.sub('[<][/].*[>]', '', footnote_all[int(footnote_number) - 1][2])) + '" href="#fn-' + str(footnote_number) + '" id="rfn-' + str(footnote_number) + '"><span class="target" id="rfn-' + str(footnote_number) + '"></span>[' + footnote_name + ']</a></sup><span class="foot_plus" id="cfn-' + str(footnote_number) + '"></span>', data, 1)
+                    except:
+                        data = re_footnote.sub('<sup><a class="wiki-fn-content" id="rfn-' + str(footnote_number) + '"><span class="target" id="rfn-' + str(footnote_number) + '"></span>[' + footnote_name + ']</a></sup><span class="foot_plus" id="cfn-' + str(footnote_number) + '"></span>', data, 1)
         else:
             break
 
     data = re.sub('\n+$', '', data)
 
     footnote_all.sort()
-
     for footdata in footnote_all:
         if footdata[2] == 0:
             footdata_in = ''
         else:
             footdata_in = footdata[2]
-
-        footdata_all += '<a href="#rfn-' + str(footdata[0]) + '">[' + footdata[1] + ']</a> <span id="fn-' + str(footdata[0]) + '">' + footdata_in + '</span><br>'
+        try:
+            footdata_all += '<a href="#rfn-' + str(footdata[0]) + '">[' + footdata[1] + ']</a> <span id="fn-' + str(footdata[0]) + '">' + footdata_in + '</span><br>'
+        except:
+            footdata_all += ''
 
     footdata_all += '</ul>'
-    if footdata_all == '\n<hr><ul id="footnote_data"></ul>':
+    if footdata_all == '\n<hr><ul style="margin-left: 0px" id="footnote_data"></ul>':
         footdata_all = ''
 
     data = re.sub('\n$', footdata_all, data + '\n', 1)
 
-    category += '</div></div>'
+    category = re.sub(' [|] $', '', category)
 
-    if category == '\n<div id="cate_all"><hr><div id="cate">분류: </div></div>':
+    category += '</ul></div>'
+
+    if category == '<div class="wiki-category"><h2>분류</h2> <ul></ul></div>':
         category = ''
-        #category = '<div style="padding:0.5rem 0.8rem;color:#31708f;background-color:#d9edf7;border-color:#bcdff1;padding-right: 30px;padding:10px;margin-bottom:1rem;border:1px solid #bcdff1;border-radius:.25rem;">이 문서는 분류가 되어 있지 않습니다. <a href="/w/category:분류">분류:분류</a>에서 적절한 분류를 찾아 문서를 분류해주세요!</div>'
 
-    data += category
-    
+
+    data = category + data
+
     i = 0
     while 1:
         try:
@@ -1031,13 +1307,13 @@ def namu(conn, data, title, main_num):
                     j += 1
 
             i += 1
-    
+
     data = re.sub('<\/td_end>', '</td>', data)
     data = re.sub('<include>(?P<in><a (?:[^>]+)>)\n', '\g<in>', data)
     data = re.sub('\n<\/include>', '', data)
-    
+
     data = re.sub('(?P<in><\/h[0-9]>)(\n)+', '\g<in>', data)
-    data = re.sub('\n\n<ul>', '\n<ul>', data)
+    data = re.sub('\n\n<ul>', '<ul>', data)
     data = re.sub('<\/ul>\n\n', '</ul>', data)
     data = re.sub('^(\n)+', '', data)
     data = re.sub('(\n)+<hr><ul id="footnote_data">', '<hr><ul id="footnote_data">', data)
@@ -1045,5 +1321,10 @@ def namu(conn, data, title, main_num):
     data = re.sub('(\n)?<hr>(\n)?', '<hr>', data)
     data = re.sub('<\/ul>\n\n<ul>', '</ul>\n<ul>', data)
     data = re.sub('\n', '<br>', data)
+
+    # 글 상자 끼어들기
+    data = re.sub('{{\|(?P<in>(?:(?:(?!\|}}).)*\n*)+)\|}}', '<div class="wiki-textbox">\g<in></div>', data)
+    if htcls:
+        data += '</div>'
 
     return [data, plus_data, backlink]

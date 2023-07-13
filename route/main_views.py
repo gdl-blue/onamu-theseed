@@ -1,6 +1,6 @@
 from .tool.func import *
 
-def main_views_2(conn, name):
+def main_views_2(conn, name, dr = 'views'):
     curs = conn.cursor()
 
     if re.search('\/', name):
@@ -23,10 +23,10 @@ def main_views_2(conn, name):
         g = ['']
 
     if g == 'css':
-        return easy_minify(flask.send_from_directory('./views' + plus, rename), 'css')   
+        return easy_minify(flask.send_from_directory('./' + dr + plus, rename), 'css')
     elif g == 'js':
-        return easy_minify(flask.send_from_directory('./views' + plus, rename), 'js')
+        return easy_minify(flask.send_from_directory('./' + dr + plus, rename), 'js')
     elif g == 'html':
-        return easy_minify(flask.send_from_directory('./views' + plus, rename))   
+        return easy_minify(flask.send_from_directory('./' + dr + plus, rename))
     else:
-        return flask.send_from_directory('./views' + plus, rename)
+        return flask.send_from_directory('./' + dr + plus, rename)

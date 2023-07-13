@@ -4,7 +4,7 @@ def search_goto_2(conn, name):
     curs = conn.cursor()
 
     if flask.request.form.get('search', None):
-        data = flask.request.form.get('search', 'test')
+        data = flask.request.form.get('search', '제목없음')
     else:
         data = name
 

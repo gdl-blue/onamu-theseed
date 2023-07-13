@@ -1,7 +1,17 @@
 from .tool.func import *
 
-def topic_admin_2(conn, name, sub, num):
+def topic_admin_2(conn, tnum, num):
     curs = conn.cursor()
+    curs.execute("select title, sub from topic where tnum = ?", [tnum])
+    fet = curs.fetchall()
+    if fet:
+        name = fet[0][0]
+        sub = fet[0][1]
+    else:
+        return re_error('/error/7000')
+
+    if getacl(name, 'read') == 0:
+        return noread(conn, name)
 
     curs.execute("select block, ip, date from topic where title = ? and sub = ? and id = ?", [name, sub, str(num)])
     data = curs.fetchall()
@@ -23,7 +33,7 @@ def topic_admin_2(conn, name, sub, num):
             is_ban += load_lang('hide_release')
         else:
             is_ban += load_lang('hide')
-        
+
         is_ban +=   '''
                         </a>
                     </li>
@@ -36,7 +46,7 @@ def topic_admin_2(conn, name, sub, num):
             is_ban += '고정 해제'
         else:
             is_ban += '고정' + ''
-        
+
         is_ban += '</a></li></ul>'
         ban += '<li><a href="/ban/' + url_pas(data[0][1]) + '">'
 
@@ -45,7 +55,7 @@ def topic_admin_2(conn, name, sub, num):
             ban += load_lang('ban_release')
         else:
             ban += load_lang('ban')
-        
+
         ban += '</a></li>' + is_ban
 
     ban +=  '''
@@ -58,7 +68,7 @@ def topic_admin_2(conn, name, sub, num):
                 </li>
             '''
     ban = '<li>' + load_lang('time') + ' : ' + data[0][2] + '</li>' + ban
-    
+
     if ip_or_user(data[0][1]) == 1:
         ban = '<li>' + load_lang('writer') + ' : ' + data[0][1] + ' <a href="/record/' + url_pas(data[0][1]) + '">(' + load_lang('record') + ')</a></li>' + ban
     else:
@@ -70,7 +80,7 @@ def topic_admin_2(conn, name, sub, num):
 
     ban = '<h2>' + load_lang('state') + '</h2><ul>' + ban
 
-    return easy_minify(flask.render_template(skin_check(), 
+    return easy_minify(flask.render_template(skin_check(),
         imp = [load_lang('discussion_tool'), wiki_set(), custom(), other2([' (#' + str(num) + ')', 0])],
         data = ban,
         menu = [['topic/' + url_pas(name) + '/sub/' + url_pas(sub) + '#' + str(num), load_lang('return')]]

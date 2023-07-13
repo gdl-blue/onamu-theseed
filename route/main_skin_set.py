@@ -2,8 +2,20 @@ from .tool.func import *
 
 def main_skin_set_2(conn):
     curs = conn.cursor()
-    
-    data = flask.make_response(sks('/error/5000'))
+    try:
+        open('./views/' + skin_check(1) + '/settings.html', 'r').read()
+    except:
+        return easy_minify(flask.render_template(skin_check(),
+                    imp = ['스킨 설정', wiki_set(), custom(), other2([0, 0])],
+                    data = '이 스킨은 설정 기능을 지원하지 않습니다.',
+                    menu = 0
+        ))
+    data = flask.make_response(
+        easy_minify(flask.render_template(skin_check(None),
+            imp = ['스킨 설정', wiki_set(), custom(), other2([0, 0])],
+            menu = 0
+        ))
+    )
 
     curs.execute("select data from other where name = 'language'")
     main_data = curs.fetchall()
@@ -17,8 +29,10 @@ def main_skin_set_2(conn):
     else:
         data.set_cookie('user_language', main_data[0][0])
 
+
+
     return data
-    
+
 def main_skin_set_r_2(conn):
 
     return redirect('/settings')
