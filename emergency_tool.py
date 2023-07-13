@@ -28,17 +28,17 @@ curs = conn.cursor()
 
 load_conn(conn)
 
-print('1. 역링크 초기화')
-print('2. 리갭챠 삭제')
-print('3. 차단 취소')
-print('4. 호스트 변경')
-print('5. 포트 변경')
-print('6. 기본스킨 변경')
-print('7. 비밀번호 변경')
-print('8. 버전 초기화')
-print('9. 새로운 데이터베이스 만들기')
+print('1. Backlink reset')
+print('2. reCAPTCHA delete')
+print('3. Ban delete')
+print('4. Change host')
+print('5. Change port')
+print('6. Change skin')
+print('7. Change password')
+print('8. Reset version')
+print('9. New DB create')
 
-print('선택: ', end = '')
+print('Select : ', end = '')
 what_i_do = input()
 
 if what_i_do == '1':
@@ -65,7 +65,7 @@ elif what_i_do == '2':
     curs.execute("delete from other where name = 'recaptcha'")
     curs.execute("delete from other where name = 'sec_re'")
 elif what_i_do == '3':
-    print('IP 혹은 유저 이름: ', end = '')
+    print('IP or Name : ', end = '')
     user_data = input()
 
     if re.search("^([0-9]{1,3}\.[0-9]{1,3})$", user_data):
@@ -83,30 +83,30 @@ elif what_i_do == '3':
         ])
     curs.execute("delete from ban where block = ?", [user_data])
 elif what_i_do == '4':
-    print('호스트 주소: ', end = '')
+    print('Host : ', end = '')
     host = input()
 
     curs.execute("update other set data = ? where name = 'host'", [host])
 elif what_i_do == '5':
-    print('포트: ', end = '')
+    print('Port : ', end = '')
     port = int(input())
 
     curs.execute("update other set data = ? where name = 'port'", [port])
 elif what_i_do == '6':
-    print('스킨 이름: ', end = '')
+    print('Skin\'s name : ', end = '')
     skin = input()
 
     curs.execute("update other set data = ? where name = 'skin'", [skin])
 elif what_i_do == '7':
     print('1. sha256')
     print('2. sha3')
-    print('선택 : ', end = '')
+    print('Select : ', end = '')
     what_i_do = int(input())
 
-    print('사용자 이름: ', end = '')
+    print('User\'s name : ', end = '')
     user_name = input()
 
-    print('암호: ', end = '')
+    print('User\'s password : ', end = '')
     user_pw = input()
 
     if what_i_do == '1':
@@ -121,7 +121,7 @@ elif what_i_do == '7':
 elif what_i_do == '8':
     curs.execute("update other set data = '00000' where name = 'ver'")
 else:
-    print('데이터베이스 이름 (기본값 data): ', end = '')
+    print('DB\'s name (data) : ', end = '')
     
     db_name = input()
     if db_name == '':

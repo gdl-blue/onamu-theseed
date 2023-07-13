@@ -1,0 +1,19 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Frameset//EN" "http://www.w3.org/TR/html4/frameset.dtd">
+<html>
+  <head>
+    <title>{{imp[0]}}{% if imp[3][0] != 0 %}{{imp[3][0]}}{% endif %}</title>
+    {{imp[1][5]|safe}}
+    {{imp[2][3]|safe}}
+    <script src="/skins/main_css/js/do_preview.js"></script>
+  </head>
+  <frameset rows="15%,*" border="0">
+    <frame src="top.html" name="top" scrolling="no" noresize>
+    <frameset rows="1*" cols="15%, *" border="0">
+      <frame src="left.html" name="left" scrolling="yes" noresize>
+      <frame src="main.html" name="main" scrolling="yes" noresize>
+    </frameset>
+    <noframes>
+      {{data | safe}}
+    </noframes>
+  </frameset>
+</html>

@@ -12,12 +12,13 @@ a { text-decoration: none; }
 input[type="checkbox"] { width: auto; }
 .popup { position: fixed; bottom: 0; padding: 10px; left: 0; background: lightgray; width: 100%; }
 #list { padding: 10px; }
-#toron { width: 100%; }
-#toron_color { background: khaki; }
-#toron_color_green { background: darkseagreen; }
-#toron_color_blue { background: skyblue; }
+.res-wrapper { width: 100%; }
+.r-head { background: khaki; }
+.r-head.first-author { background: darkseagreen; }
+.res-type-status.r-head { background: skyblue; }
 #toron_color_red { background: indianred; }
 #toron_color_grey { background: gainsboro; }
+.r-hidden-body { background: #888; }
 #cate { border: 1px solid; padding: 5px; }
 blockquote { border: 1px solid; padding: 15px; margin: 0; margin-top: 10px; }
 img, iframe { max-width: 100%; }
